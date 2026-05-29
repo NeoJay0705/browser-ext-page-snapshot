@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Page Snapshot</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="popup">
+      <header>
+        <h1>Page Snapshot</h1>
+        <p>Save this page as a local HTML snapshot.</p>
+      </header>
+
+      <label for="filename">Filename</label>
+      <input
+        id="filename"
+        type="text"
+        maxlength="120"
+        autocomplete="off"
+        placeholder="Leave blank for automatic name"
+      >
+
+      <button id="download" type="button">Download Snapshot</button>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

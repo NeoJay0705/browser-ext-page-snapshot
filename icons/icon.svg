@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Page Snapshot icon">
+  <rect width="128" height="128" rx="24" fill="#2563eb"/>
+  <rect x="26" y="18" width="76" height="92" rx="10" fill="#ffffff"/>
+  <rect x="38" y="34" width="52" height="8" rx="4" fill="#bfdbfe"/>
+  <rect x="38" y="50" width="52" height="8" rx="4" fill="#bfdbfe"/>
+  <text x="64" y="88" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700" fill="#1d4ed8">PS</text>
+</svg>
