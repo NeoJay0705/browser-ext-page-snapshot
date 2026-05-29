@@ -57,6 +57,32 @@
     return chrome.runtime.lastError ? chrome.runtime.lastError.message : "";
   }
 
+  function snapshotPage() {
+    const documentClone = document.documentElement.cloneNode(true);
+    const head = documentClone.querySelector("head") || documentClone.insertBefore(document.createElement("head"), documentClone.firstChild);
+    const hasBase = Boolean(head.querySelector("base[href]"));
+
+    if (!hasBase) {
+      const base = document.createElement("base");
+      base.setAttribute("href", document.baseURI || window.location.href);
+      head.insertBefore(base, head.firstChild);
+    }
+
+    return `<!doctype html>\n${documentClone.outerHTML}`;
+  }
+
+  function isRestrictedUrl(url) {
+    return /^(about|chrome|chrome-extension|edge|moz-extension):/i.test(url || "");
+  }
+
+  function snapshotErrorMessage(message) {
+    if (/^(Cannot access|The extensions gallery cannot be scripted|This page cannot be scripted)/i.test(message || "")) {
+      return "Cannot snapshot this page (restricted URL).";
+    }
+
+    return message || "Snapshot failed.";
+  }
+
   function getActiveTab() {
     return new Promise((resolve, reject) => {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -77,17 +103,21 @@
     });
   }
 
-  function captureSnapshot(tabId) {
+  function captureSnapshot(tab) {
+    if (isRestrictedUrl(tab.url)) {
+      return Promise.reject(new Error("Cannot snapshot this page (restricted URL)."));
+    }
+
     return new Promise((resolve, reject) => {
       chrome.scripting.executeScript(
         {
-          target: { tabId },
-          files: ["src/snapshot.js"]
+          target: { tabId: tab.id },
+          func: snapshotPage
         },
         (results) => {
           const error = lastErrorMessage();
           if (error) {
-            reject(new Error(error));
+            reject(new Error(snapshotErrorMessage(error)));
             return;
           }
 
@@ -129,7 +159,7 @@
     try {
       const filename = sanitizeFilename(filenameInput.value);
       const tab = await getActiveTab();
-      const html = await captureSnapshot(tab.id);
+      const html = await captureSnapshot(tab);
       await downloadSnapshot(html, filename);
       setStatus(`Download started: ${filename}`, "success");
     } catch (error) {
