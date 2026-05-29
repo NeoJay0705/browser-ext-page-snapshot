@@ -47,6 +47,7 @@ Page Snapshot processes content locally in the browser and does not transmit pag
 ## Limitations
 
 - External resources such as images, scripts, stylesheets, and fonts are referenced but not inlined.
+- Snapshots are frozen: all inline scripts are stripped so the page is preserved as it was when you clicked Download. External stylesheets and images remain linked (require network when re-opening).（快照會被凍結：所有內嵌腳本都會移除，以保留點擊下載當下的頁面狀態；外部樣式表與圖片仍維持連結，重新開啟時需要網路。）
 - Browser internal pages and restricted extension store pages cannot be captured.
 - Very large pages may take longer to serialize and download.
 

@@ -59,6 +59,18 @@
 
   function snapshotPage() {
     const documentClone = document.documentElement.cloneNode(true);
+
+    documentClone.querySelectorAll("script").forEach((element) => element.remove());
+    documentClone.querySelectorAll("noscript").forEach((element) => element.remove());
+    documentClone.querySelectorAll("*").forEach((element) => {
+      [...element.attributes].forEach((attribute) => {
+        if (attribute.name.startsWith("on")) {
+          element.removeAttribute(attribute.name);
+        }
+      });
+    });
+    documentClone.querySelectorAll('link[rel="preload"], link[rel="modulepreload"], link[rel="prefetch"]').forEach((element) => element.remove());
+
     const head = documentClone.querySelector("head") || documentClone.insertBefore(document.createElement("head"), documentClone.firstChild);
     const hasBase = Boolean(head.querySelector("base[href]"));
 
