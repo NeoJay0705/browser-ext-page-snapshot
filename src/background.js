@@ -6,14 +6,48 @@ function runtimeLastErrorMessage() {
   return chrome.runtime.lastError ? chrome.runtime.lastError.message : "";
 }
 
-function revokeWhenDownloadEnds(downloadId, url) {
+function toBase64Utf8(text) {
+  const bytes = new TextEncoder().encode(text);
+  const chunkSize = 0x8000;
+  let binary = "";
+
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+
+  return btoa(binary);
+}
+
+function createSnapshotDownloadUrl(html) {
+  const mimeType = "text/html;charset=utf-8";
+  const urlApi = globalThis.URL;
+
+  if (urlApi && typeof urlApi.createObjectURL === "function" && typeof urlApi.revokeObjectURL === "function") {
+    const blob = new Blob([html], { type: mimeType });
+    const url = urlApi.createObjectURL(blob);
+
+    return {
+      url,
+      revoke() {
+        urlApi.revokeObjectURL(url);
+      }
+    };
+  }
+
+  return {
+    url: `data:${mimeType};base64,${toBase64Utf8(html)}`,
+    revoke() {}
+  };
+}
+
+function revokeWhenDownloadEnds(downloadId, downloadUrl) {
   function handleDownloadChanged(delta) {
     if (
       delta.id === downloadId &&
       delta.state &&
       (delta.state.current === "complete" || delta.state.current === "interrupted")
     ) {
-      URL.revokeObjectURL(url);
+      downloadUrl.revoke();
       chrome.downloads.onChanged.removeListener(handleDownloadChanged);
     }
   }
@@ -22,24 +56,23 @@ function revokeWhenDownloadEnds(downloadId, url) {
 }
 
 function startSnapshotDownload(message, sendResponse) {
-  const blob = new Blob([message.html], { type: "text/html;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
+  const downloadUrl = createSnapshotDownloadUrl(message.html);
 
-  chrome.downloads.download({ url, filename: message.filename, saveAs: false }, (downloadId) => {
+  chrome.downloads.download({ url: downloadUrl.url, filename: message.filename, saveAs: false }, (downloadId) => {
     const error = runtimeLastErrorMessage();
     if (error) {
-      URL.revokeObjectURL(url);
+      downloadUrl.revoke();
       sendResponse({ ok: false, error });
       return;
     }
 
     if (typeof downloadId !== "number") {
-      URL.revokeObjectURL(url);
+      downloadUrl.revoke();
       sendResponse({ ok: false, error: "The browser did not start the download." });
       return;
     }
 
-    revokeWhenDownloadEnds(downloadId, url);
+    revokeWhenDownloadEnds(downloadId, downloadUrl);
     sendResponse({ ok: true, downloadId });
   });
 }
